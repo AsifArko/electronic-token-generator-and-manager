@@ -1,5 +1,5 @@
 #include <SoftwareSerial.h>
-#include <Sim800L.h>
+#include <GSMSim.h>
 
 // baud rates
 #define baud_ESP 9600
@@ -10,9 +10,13 @@
 
 #define ACK "ACK"
 
+// variables
+int day,month,year,minute,second,hour; // time-keeping
+String textSms,numberSms; // tracking SMSs
+
 // RX, TX
 SoftwareSerial ESP8266E(7, 8); 
-Sim800L GSM(11, 10);
+GSMSim GSM(11, 10, A0); // . . RESET
 
 void setup() {
   // set BULTIN LED as an output
@@ -45,11 +49,36 @@ void setup() {
 
   // blink once for 1 sec
   Blink(LED_BUILTIN, 1, 1000);
+
+  // RESET the GSM network
+  GSM.reset();
+
+  // For setting time from ntp servers, we must connect to internet!
+  GSM.gprsConnectBearer();
   
+  // the parameter to send is UTC of your country
+  GSM.timeSetServer(6) // +6 for DHK // time server is: 202.120.2.101 (Shanghai Jiaotong University - China)
+  //GSM.timeSetServer(6, "IP"); // to set a different server, replace IP with the server address
+
+  // SYNC time with server
+  GSM.timeSyncFromServer();
+
+  // close the internet connection
+  GSM.gprsCloseConn();
+
+  // set the times
+  GSM.timeGet(&day,&month,&year,&hour,&minute,&second);
+
+  // Set to PDU mode
+  GSM.smsTextMode(true);
+  
+  // wait for 3 seconds so proper network connections are up 
+  delay(3000);
 }
 
 void loop() {
-  
+  // get the time
+  GSM.timeGet(&day,&month,&year,&hour,&minute,&second);
 }
 
 // sends signal on a pin on defined parameter
