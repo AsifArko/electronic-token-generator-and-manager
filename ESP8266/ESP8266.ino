@@ -8,10 +8,11 @@
 #define DEBUG true
 #define DEBUGBaud 115200
 
-SoftwareSerial main(12, 13); // RX, TX
+SoftwareSerial main(D7, D8); // RX, TX
 
 void setup() {
-  
+  pinMode(2, OUTPUT);
+
   pinMode(LED0, OUTPUT);
 
   // begin main at baud rate: 9600
@@ -19,17 +20,7 @@ void setup() {
   while(!main){
     ;
   }
-
-  // send an ack of success
-  main.println("ACK");
   
-  // wait for an ack back
-  while(main.available()){
-    if(main.readString() == "ACK") {
-      break;
-    }
-  }
-
   // blink 3 times upon successful communication with the main board.
   Blink(LED0, 3, 200);
   
