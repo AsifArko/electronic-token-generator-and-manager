@@ -1,5 +1,6 @@
-#include <SoftwareSerial.h>
 #include <GSMSim.h>
+#include <LiquidCrystal.h>
+#include <SoftwareSerial.h>
 
 // baud rates
 #define baud_ESP 9600
@@ -7,6 +8,9 @@
 
 #define DEBUG true
 #define DEBUGBaud 115200
+
+#define LCD_contrast 20
+#define LCD_contrast_pin 6
 
 #define ACK "ACK"
 
@@ -17,6 +21,7 @@ String textSms,numberSms; // tracking SMSs
 // RX, TX
 SoftwareSerial ESP8266E(7, 8); 
 GSMSim GSM(11, 10, A0); // . . RESET
+LiquidCrystal LCD(12, 13, 5, 4, 3, 2); // RS, E, D4, D5, D6, D7
 
 void setup() {
   // set BULTIN LED as an output
@@ -74,6 +79,29 @@ void setup() {
   
   // wait for 3 seconds so proper network connections are up 
   delay(3000);
+
+  // set contrast with analog value to run LCD without potentiometer
+  analogWrite(LCD_contrast_pin, LCD_contrast);
+
+  // begin 16x2 LCD Screen
+  LCD.begin(16, 2);
+
+  // print welcome message
+  LCD.setCursor(0, 0);
+  LCD.print(F("Welcome... "));
+
+  // wait 1.5 sec and wipe the screen
+  delay(1500);
+  LCD.clear();
+
+  // print a 0 on the screen initially
+  LCD.print(F("0"));
+  
+  // show the time and date with the signal strength of the GSM both on the bottom line
+  LCD.setCursor(0, 1);
+  char bottomRow[16];
+  sprintf(bottomRow, "%d/%d, %d:%d, %u", day, month, hour, minute, GSM.signalQuality()); // format the string
+  LCD.print(bottomRow);
 }
 
 void loop() {
@@ -84,9 +112,12 @@ void loop() {
   // If no message found it returns NO_SMS else returns SMSIndexNo:x,y,z. 
   // If you have a lot of un read messages, return only SMSIndexNo:
   if(GSM.smsListUnread() != "NO_SMS") {
+    // the following method is not included in the library. todo: do a pull request
     numberSms = GSM.getNumberSms(1); // get the senders number
     textSms = GSM.smsRead(1, true); // get the contents of the sms and mark it as read
 
+    // send the number and sms content to nodeMcu to send it over to the server
+    
     // delete the SMS(s) marked read
     GSM.smsDeleteAllRead();
   }
