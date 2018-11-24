@@ -57,7 +57,7 @@ void setup() {
   GSM.gprsConnectBearer();
   
   // the parameter to send is UTC of your country
-  GSM.timeSetServer(6) // +6 for DHK // time server is: 202.120.2.101 (Shanghai Jiaotong University - China)
+  GSM.timeSetServer(6); // +6 for DHK // time server is: 202.120.2.101 (Shanghai Jiaotong University - China)
   //GSM.timeSetServer(6, "IP"); // to set a different server, replace IP with the server address
 
   // SYNC time with server
@@ -79,6 +79,21 @@ void setup() {
 void loop() {
   // get the time
   GSM.timeGet(&day,&month,&year,&hour,&minute,&second);
+
+  // check if there's any new messages
+  // If no message found it returns NO_SMS else returns SMSIndexNo:x,y,z. 
+  // If you have a lot of un read messages, return only SMSIndexNo:
+  if(GSM.smsListUnread() != "NO_SMS") {
+    numberSms = GSM.getNumberSms(1); // get the senders number
+    textSms = GSM.smsRead(1, true); // get the contents of the sms and mark it as read
+
+    // delete the SMS(s) marked read
+    GSM.smsDeleteAllRead();
+  }
+
+  // clean the variables after processing each sms
+  numberSms = "";
+  textSms = "";
 }
 
 // sends signal on a pin on defined parameter
