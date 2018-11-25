@@ -17,6 +17,8 @@
 // variables
 int day,month,year,minute,second,hour; // time-keeping
 String textSms,numberSms; // tracking SMSs
+int currentToken = 0;
+String IP;
 
 // RX, TX
 SoftwareSerial ESP8266E(7, 8); 
@@ -95,19 +97,16 @@ void setup() {
   LCD.clear();
 
   // print a 0 on the screen initially
-  LCD.print(F("0"));
+  LCD.print(currentToken);
   
-  // show the time and date with the signal strength of the GSM both on the bottom line
-  LCD.setCursor(0, 1);
-  char bottomRow[16];
-  sprintf(bottomRow, "%d/%d, %d:%d, %u", day, month, hour, minute, GSM.signalQuality()); // format the string
-  LCD.print(bottomRow);
+  lcd_PrintBottom();
 }
 
 void loop() {
   // get the time
   GSM.timeGet(&day,&month,&year,&hour,&minute,&second);
-
+  lcd_PrintBottom();
+  
   // check if there's any new messages
   // If no message found it returns NO_SMS else returns SMSIndexNo:x,y,z. 
   // If you have a lot of un read messages, return only SMSIndexNo:
@@ -125,6 +124,21 @@ void loop() {
   // clean the variables after processing each sms
   numberSms = "";
   textSms = "";
+
+  // see if any message is ariving from the NodeMcu
+  if(ESP8266E.available()) {
+    String msg = ESP8266E.readString();
+    if(msg.equalsIgnoreCase("NEXT")){
+      LCD.setCursor(0, 0);
+      LCD.print(++currentToken);
+    } else if(msg.startsWith("IP"){
+      IP = msg.substring(2);
+      LCD.setCursor(0, 0);
+      LCD.print(IP);
+      delay(3000);
+      LCD.print(currentToken);
+    }
+  }
 }
 
 // sends signal on a pin on defined parameter
@@ -136,4 +150,13 @@ void Blink(int pin, int times, int DELAY){
     digitalWrite(pin, LOW);
     delay(DELAY);
   }
+}
+
+// view date and time with signal strenght on the bottom row
+void lcd_PrintBottom() {
+  // show the time and date with the signal strength of the GSM both on the bottom line
+  LCD.setCursor(0, 1);
+  char bottomRow[16];
+  sprintf(bottomRow, "%d/%d, %d:%d, %u", day, month, hour, minute, GSM.signalQuality()); // format the string
+  LCD.print(bottomRow);
 }
